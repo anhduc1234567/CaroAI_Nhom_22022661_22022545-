@@ -3,6 +3,8 @@ import random
 from src.caro.config import BOARD_SIZE, EMPTY_CELL, BOT_SYMBOL
 from src.caro.ai.helper import *
 from src.caro.ai.min_max import minimax
+from src.caro.ai.alpha_beta import alpha_beta
+
 def choose_move(board: list[list[str]]) -> tuple[int, int] | None:
     """Temporary bot: pick the first available cell."""
     for row in range(BOARD_SIZE):
@@ -28,17 +30,93 @@ def choose_move_random(board: list[list[str]]) -> tuple[int, int] | None:
     
     return None
 
-def choose_best_move(board, depth = 1):
+def choose_best_move(board, depth = 2):
+    """
+    Hàm chọn nước đi cho Bot "Dễ" (Minimax).
+    """
+    import time
+    start_time = time.time()
+    
+    # RESET THỐNG KÊ
+    AI_STATS["nodes_visited"] = 0
+    AI_STATS["cache_hits"] = 0
+    AI_STATS["pruning_count"] = 0
+
     best_move = None
     best_score = -float('inf')
-    print('Đang mini-max')
-    for move in get_potential_moves(board):
+    
+    # Xóa cache cũ
+    from src.caro.ai.min_max import TRANSPOSITION_TABLE_MINIMAX
+    TRANSPOSITION_TABLE_MINIMAX.clear()
+
+    potential_moves = get_potential_moves(board)
+    potential_moves.sort(key=lambda m: score_move(board, m, BOT_SYMBOL), reverse=True)
+    potential_moves = potential_moves[:10]
+
+    for move in potential_moves:
         make_move(board, move, BOT_SYMBOL)
-        score = minimax(board, depth, False) # Bắt đầu đệ quy
+        score = minimax(board, depth, False) 
         undo_move(board, move)
         
         if score > best_score:
             best_score = score
             best_move = move
+    
+    # PHÂN TÍCH KẾT QUẢ
+    end_time = time.time()
+    duration = end_time - start_time
+    print(f"\n--- PHÂN TÍCH MINIMAX ---")
+    print(f"⏱ Thời gian: {duration:.4f} giây")
+    print(f"🔍 Số nút đã duyệt: {AI_STATS['nodes_visited']}")
+    print(f"💾 Tận dụng Cache: {AI_STATS['cache_hits']} lần")
+    print(f"--------------------------\n")
             
-    return best_move # Đây là Output cuối cùng của bạn
+    return best_move
+
+def choose_best_move_alpha_beta(board, depth = 4):
+    """
+    Hàm chọn nước đi cho Bot "Khó" (Alpha-Beta Pruning).
+    """
+    import time
+    start_time = time.time()
+
+    # RESET THỐNG KÊ
+    AI_STATS["nodes_visited"] = 0
+    AI_STATS["cache_hits"] = 0
+    AI_STATS["pruning_count"] = 0
+
+    best_move = None
+    best_score = -float('inf')
+    alpha = -float('inf')
+    beta = float('inf')
+    
+    # Xóa cache cũ
+    from src.caro.ai.alpha_beta import TRANSPOSITION_TABLE
+    TRANSPOSITION_TABLE.clear()
+    
+    potential_moves = get_potential_moves(board)
+    potential_moves.sort(key=lambda m: score_move(board, m, BOT_SYMBOL), reverse=True)
+    potential_moves = potential_moves[:15]
+
+    for move in potential_moves:
+        make_move(board, move, BOT_SYMBOL)
+        score = alpha_beta(board, depth, alpha, beta, False)
+        undo_move(board, move)
+        
+        if score > best_score:
+            best_score = score
+            best_move = move
+        
+        alpha = max(alpha, best_score)
+    
+    # PHÂN TÍCH KẾT QUẢ
+    end_time = time.time()
+    duration = end_time - start_time
+    print(f"\n--- PHÂN TÍCH ALPHA-BETA ---")
+    print(f"⏱ Thời gian: {duration:.4f} giây")
+    print(f"🔍 Số nút đã duyệt: {AI_STATS['nodes_visited']}")
+    print(f"💾 Tận dụng Cache: {AI_STATS['cache_hits']} lần")
+    print(f"✂️ Số lần cắt tỉa: {AI_STATS['pruning_count']} lần")
+    print(f"--------------------------\n")
+            
+    return best_move

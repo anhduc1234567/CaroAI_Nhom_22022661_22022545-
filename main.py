@@ -5,8 +5,7 @@ from typing import List, Optional
 
 # Import các logic hiện có của bạn
 from src.caro.config import BOARD_SIZE
-from src.caro.ai.simple_bot import choose_best_move # Giả định đây là hàm Minimax của bạn
-# Lưu ý: Bạn có thể cần điều chỉnh lại đường dẫn import tùy vào cấu trúc thư mục của bạn
+from src.caro.ai.simple_bot import choose_best_move, choose_best_move_alpha_beta
 
 app = FastAPI()
 
@@ -21,7 +20,7 @@ app.add_middleware(
 # Khai báo cấu trúc dữ liệu nhận từ Frontend
 class GameRequest(BaseModel):
     board: List[List[str]]
-    # Bạn có thể thêm last_move nếu thuật toán Minimax cần
+    difficulty: Optional[str] = "a" # "a" cho Minimax, "b" cho Alpha-Beta
 
 @app.get("/")
 def read_root():
@@ -33,10 +32,17 @@ async def get_bot_move(request: GameRequest):
     Endpoint nhận trạng thái bàn cờ và trả về nước đi tốt nhất của Bot
     """
     board = request.board
-    # 1. Gọi hàm Minimax đã viết trước đó
-    # Giả sử hàm này trả về (row, col)
-    move = choose_best_move(board)
-    print(move)
+    difficulty = request.difficulty
+
+    # Chọn thuật toán dựa trên độ khó
+    if difficulty == "b":
+        move = choose_best_move_alpha_beta(board, depth=4) # Tăng độ sâu lên 4
+    else:
+        move = choose_best_move(board, depth=2) # Mặc định là Minimax
+
+        
+    print(f"Bot move ({difficulty}): {move}")
+    
     if move:
         row, col = move
         return {
@@ -46,5 +52,6 @@ async def get_bot_move(request: GameRequest):
         }
     
     return {"status": "no_moves_available"}
+
 
 # Để chạy: uvicorn main:app --reload
