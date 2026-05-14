@@ -200,6 +200,25 @@ def is_terminal_node(board):
     # Nếu chưa ai thắng và vẫn còn ô trống
     return False
 
+def evaluate_window(window):
+    score = 0
+    bot_count = window.count(BOT_SYMBOL)
+    human_count = window.count(HUMAN_SYMBOL)
+    empty_count = window.count(EMPTY_CELL)
+
+    # --- BOT TẤN CÔNG ---
+    if bot_count == 5: return 2000000
+    if bot_count == 4 and empty_count == 1: score += 50000
+    if bot_count == 3 and empty_count == 2: score += 5000
+    if bot_count == 2 and empty_count == 3: score += 500
+
+    # --- CHẶN NGƯỜI CHƠI (Ưu tiên cực cao) ---
+    if human_count == 4 and empty_count == 1: score -= 1000000 # Phải chặn 4 ngay
+    if human_count == 3 and empty_count == 2: score -= 20000  # Chặn 3 thoáng
+    if human_count == 2 and empty_count == 3: score -= 1000
+        
+    return score
+
 def evaluate_board(board):
     total_score = 0
     for r in range(BOARD_SIZE):
@@ -263,23 +282,4 @@ def score_move(board, move, symbol):
     # Ưu tiên các nước đi gần trung tâm để mở rộng thế trận
     center = BOARD_SIZE // 2
     score += (BOARD_SIZE - abs(row - center) - abs(col - center))
-    return score
-
-def evaluate_window(window):
-    score = 0
-    bot_count = window.count(BOT_SYMBOL)
-    human_count = window.count(HUMAN_SYMBOL)
-    empty_count = window.count(EMPTY_CELL)
-
-    # --- BOT TẤN CÔNG ---
-    if bot_count == 5: return 2000000
-    if bot_count == 4 and empty_count == 1: score += 50000
-    if bot_count == 3 and empty_count == 2: score += 5000
-    if bot_count == 2 and empty_count == 3: score += 500
-
-    # --- CHẶN NGƯỜI CHƠI (Ưu tiên cực cao) ---
-    if human_count == 4 and empty_count == 1: score -= 1000000 # Phải chặn 4 ngay
-    if human_count == 3 and empty_count == 2: score -= 20000  # Chặn 3 thoáng
-    if human_count == 2 and empty_count == 3: score -= 1000
-        
     return score

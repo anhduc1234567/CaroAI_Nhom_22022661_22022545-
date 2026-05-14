@@ -30,34 +30,6 @@ def choose_move_random(board: list[list[str]]) -> tuple[int, int] | None:
     
     return None
 
-# def choose_best_move_by_minimax(board, depth =1, radius = 1):
-    
-#     import time
-#     start_time = time.time()
-#     stats = {
-#         "nodes": 0
-#     }
-#     best_move = None
-#     best_score = -float('inf')
-#     print('Đang mini-max')
-#     for move in get_ordered_moves(board, radius):
-#         make_move(board, move, BOT_SYMBOL)
-#         score = minimax(board, depth, False, radius, stats) # Bắt đầu đệ quy
-#         undo_move(board, move)
-        
-#         if score > best_score:
-#             best_score = score
-#             best_move = move
-#     end_time = time.time()
-#     duration = end_time - start_time
-#     print(f"\n--- PHÂN TÍCH MINIMAX ---")
-#     print(f"⏱ Thời gian: {duration:.4f} giây")
-#     print(f"🔍 Số nút đã duyệt: {stats['nodes']}")
-#     print(f"--------------------------\n")
-            
-    
-#     return best_move # Đây là Output cuối cùng của bạn
-
 
 def choose_best_move_by_minimax(board, depth = 2, radius = 1):
     """

@@ -1,142 +1,243 @@
-# Caro 15x15
+# Caro AI 15x15
 
-Du an hien tai la mot game caro 15x15 theo mo hinh:
+This project is a **15x15 Caro (Gomoku) game with an AI opponent**.
 
-- Backend: `FastAPI`
-- Frontend: `HTML + CSS + JavaScript`
-- AI/Bot: cac ham trong `src/caro/ai`
+- The **frontend** is a static HTML/CSS/JavaScript page.
+- The **backend** is a FastAPI service.
+- The **AI engine** supports `minimax`, `alpha-beta`, and `alpha-beta_v2`.
 
-README nay mo ta theo dung cau truc repo hien tai.
+The current project structure is designed so that you only need:
 
-## Cau truc hien tai
+1. Open `index.html` with **Live Server** in VS Code.
+2. Run the FastAPI backend with Uvicorn on port `8222`.
+
+## UI Preview
+
+![Caro UI](./caro-ui.png)
+
+## Problem Statement
+
+The goal of this project is to build a playable Caro board where:
+
+- The human player uses `X`.
+- The bot uses `O`.
+- The board size is `15 x 15`.
+- The frontend sends the current board state to the backend.
+- The backend calculates the best next move using the selected AI algorithm.
+- The frontend renders the bot move and continues the game.
+
+## Project Structure
 
 ```text
 Caro/
-|- main.py
-|- requirements.txt
-|- README.md
-`- src/
-   `- caro/
-      |- config.py
-      |- ai/
-      |  |- helper.py
-      |  |- min_max.py
-      |  `- simple_bot.py
-      `- ui/
-         |- index.html
-         `- scripts.js
+|-- main.py
+|-- requirements.txt
+|-- README.md
+|-- caro-ui.png
+`-- src/
+    `-- caro/
+        |-- __init__.py
+        |-- config.py
+        |-- ai/
+        |   |-- __init__.py
+        |   |-- helper.py
+        |   |-- minimax.py
+        |   |-- alpha_beta.py
+        |   |-- alpha_beta_v2.py
+        |   `-- bot_response.py
+        `-- ui/
+            |-- __init__.py
+            |-- index.html
+            `-- scripts.js
 ```
 
-## Vai tro tung phan
+## What Each Part Does
+
+### Backend
 
 - `main.py`
-  - Tao API bang FastAPI.
-  - Cung cap endpoint `POST /bot-move` de frontend gui trang thai ban co len va nhan nuoc di cua may.
+  - Creates the FastAPI application.
+  - Enables CORS so the frontend opened from Live Server can call the API.
+  - Exposes:
+    - `GET /`
+    - `POST /bot-move`
 
 - `src/caro/config.py`
-  - Khai bao cac hang so dung chung nhu kich thuoc ban co, ky hieu quan co.
+  - Stores shared constants such as board size and player symbols.
+
+### AI Logic
 
 - `src/caro/ai/helper.py`
-  - Cac ham ho tro cho bot:
-  - tim nuoc di tiem nang
-  - dat / xoa nuoc di
-  - kiem tra ket thuc van dau
-  - cham diem ban co
+  - Board utilities, move generation, evaluation, win/terminal checks, and scoring helpers.
 
-- `src/caro/ai/min_max.py`
-  - Chua thuat toan `minimax`.
+- `src/caro/ai/minimax.py`
+  - Minimax search implementation.
 
-- `src/caro/ai/simple_bot.py`
-  - Chua cac cach chon nuoc di cho may.
-  - Hien co `choose_move`, `choose_move_random`, `choose_best_move`.
-  - `main.py` dang goi `choose_best_move()`.
+- `src/caro/ai/alpha_beta.py`
+  - Alpha-beta pruning implementation.
+
+- `src/caro/ai/alpha_beta_v2.py`
+  - Optimized alpha-beta version with caching and pruning statistics.
+
+- `src/caro/ai/bot_response.py`
+  - Chooses the move by calling the requested algorithm.
+
+### Frontend
 
 - `src/caro/ui/index.html`
-  - Giao dien trang choi.
-  - Ve ban co 15x15 bang HTML/CSS.
+  - Main game UI.
+  - Renders the board, controls, and move history.
 
 - `src/caro/ui/scripts.js`
-  - Xu ly tuong tac khi nguoi choi click vao o.
-  - Goi API backend de lay nuoc di cua may.
+  - Handles board interaction.
+  - Sends requests to `http://127.0.0.1:8222/bot-move`.
+  - Updates the UI with the bot response.
 
-## Luong chay
+## Runtime Flow
 
-1. Nguoi choi mo `index.html`.
-2. JavaScript khoi tao ban co 15x15.
-3. Nguoi choi danh `X`.
-4. Frontend gui ma tran ban co hien tai den API `POST /bot-move`.
-5. Backend goi `choose_best_move(board)`.
-6. API tra ve vi tri `(row, col)` cho may.
-7. Frontend cap nhat nuoc di `O` len ban co.
+1. Open the frontend with VS Code Live Server.
+2. The page initializes a 15x15 board in the browser.
+3. The player clicks a cell to place `X`.
+4. The frontend sends the current board plus algorithm settings to `POST /bot-move`.
+5. The backend receives the request in `main.py`.
+6. `main.py` calls one of these functions:
+   - `choose_best_move_by_minimax(...)`
+   - `choose_best_move_by_alpha_beta(...)`
+   - `choose_best_move_by_alpha_beta_v2(...)`
+7. The backend returns the best `(row, col)` move.
+8. The frontend places `O` on the board and continues the game.
 
-## Cach chay
+## Requirements
 
-Hien tai `requirements.txt` moi chi co `streamlit`, trong khi code dang dung `FastAPI`.
-Vi vay can cai them cac goi backend can thiet.
+The current `requirements.txt` already matches the external Python packages used by the project:
 
-### 1. Cai thu vien
-
-```bash
-pip install fastapi uvicorn pydantic
+```text
+fastapi
+uvicorn
+pydantic
 ```
 
-Neu muon dong bo them theo file hien co:
+No additional Python package is required based on the current imports in the repository.
+
+## How To Run
+
+### 1. Open the project folder
+
+Project root on your machine:
+
+```text
+C:\Users\anhduc\WORKSPACE\CODE\Caro
+```
+
+Open this folder in VS Code.
+
+### 2. Install Python dependencies
+
+From the project root, run:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Chay backend API
+If you use Python 3 explicitly:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 3. Start the backend API
+
+From:
+
+```text
+C:\Users\anhduc\WORKSPACE\CODE\Caro
+```
+
+run:
 
 ```bash
 uvicorn main:app --reload --port 8222
 ```
 
-Sau khi chay thanh cong, API mac dinh se o:
+Important:
+
+- The correct Uvicorn target is `main:app`.
+
+
+After startup, the backend will be available at:
 
 ```text
 http://127.0.0.1:8222
 ```
 
-Thu nhanh:
+Quick check:
 
 ```text
-GET http://127.0.0.1:8222/
+http://127.0.0.1:8222/
 ```
 
-Se tra ve:
+Expected response:
 
 ```json
 {"message":"Caro AI API is running!"}
 ```
 
-### 3. Mo frontend
+### 4. Open the frontend with Live Server
 
-Mo file sau trong trinh duyet:
+Frontend file path:
 
-- [index.html](C:/Users/anhduc/WORKSPACE/CODE/Caro/src/caro/ui/index.html)
+```text
+C:\Users\anhduc\WORKSPACE\CODE\Caro\src\caro\ui\index.html
+```
 
-Luu y:
+In VS Code:
 
-- `scripts.js` dang goi API co dia chi co dinh: `http://127.0.0.1:8222/bot-move`
-- Backend phai chay truoc thi frontend moi danh duoc voi may.
+1. Open the folder `C:\Users\anhduc\WORKSPACE\CODE\Caro`.
+2. In the Explorer panel, go to `src > caro > ui > index.html`.
+3. Right-click `index.html`.
+4. Select **Open with Live Server**.
 
-## Dinh dang du lieu API
+Typical Live Server URL:
 
-### Request
+```text
+http://127.0.0.1:5500/src/caro/ui/index.html
+```
 
-Frontend gui len mot JSON co dang:
+Notes:
+
+- The backend must be running before the bot can respond.
+- `scripts.js` is hardcoded to call:
+
+```text
+http://127.0.0.1:8222/bot-move
+```
+
+## API Contract
+
+### `GET /`
+
+Health check endpoint.
+
+Example response:
+
+```json
+{"message":"Caro AI API is running!"}
+```
+
+### `POST /bot-move`
+
+Request body:
 
 ```json
 {
-  "board": [
-    [".", ".", ".", "..."],
-    [".", "X", ".", "..."]
-  ]
+  "board": [[".", ".", "."], [".", "X", "."]],
+  "algorithm": "alpha-beta",
+  "depth": 3,
+  "radius": 2
 }
 ```
 
-### Response thanh cong
+Successful response:
 
 ```json
 {
@@ -146,7 +247,7 @@ Frontend gui len mot JSON co dang:
 }
 ```
 
-### Response khi khong con nuoc di
+If no move is available:
 
 ```json
 {
@@ -154,24 +255,22 @@ Frontend gui len mot JSON co dang:
 }
 ```
 
-## Ghi chu ky thuat
+## Important Paths
 
-- Kich thuoc ban co dang dung la `15x15`.
-- O trong duoc bieu dien boi `"."` trong Python.
-- Nguoi choi dung `X`.
-- May dung `O`.
-- Backend da mo CORS cho moi origin bang `allow_origins=["*"]`.
+- Project root:
+  - `C:\Users\anhduc\WORKSPACE\CODE\Caro`
+- Backend entry:
+  - `C:\Users\anhduc\WORKSPACE\CODE\Caro\main.py`
+- Frontend entry:
+  - `C:\Users\anhduc\WORKSPACE\CODE\Caro\src\caro\ui\index.html`
+- Frontend script:
+  - `C:\Users\anhduc\WORKSPACE\CODE\Caro\src\caro\ui\scripts.js`
+- AI module folder:
+  - `C:\Users\anhduc\WORKSPACE\CODE\Caro\src\caro\ai`
 
-## Han che hien tai
+## Current Notes
 
-- `requirements.txt` chua phan anh dung cac dependency backend dang duoc su dung.
-- `scripts.js` hien co dau hieu bi lap ham `updateCell()` va co mot vai doan code cu chua don dep.
-- File frontend dang la file tinh, chua co server rieng de phuc vu static files.
-- Trong `main.py` dang co mot so comment/literal bi loi ma hoa ky tu.
-
-## Huong phat trien tiep
-
-- Gom frontend vao FastAPI de phuc vu truc tiep thay vi mo file HTML thu cong.
-- Don dep `scripts.js`, bo code trung lap.
-- Chuan hoa `requirements.txt`.
-- Tach ro logic game, API, va AI thanh cac module rieng de de test hon.
+- The frontend is served separately through VS Code Live Server.
+- The backend only exposes API endpoints and does not serve static frontend files.
+- CORS is enabled with `allow_origins=["*"]`, which is convenient for local development.
+- The source files currently contain some text-encoding artifacts in comments and UI labels, but this does not change the basic run flow described above.
