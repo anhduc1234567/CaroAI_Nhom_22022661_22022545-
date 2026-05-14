@@ -41,6 +41,8 @@ async def get_bot_move(request: GameRequest):
     radius = request.radius
     # 1. Gọi hàm Minimax đã viết trước đó
     # Giả sử hàm này trả về (row, col)
+    print(algotithm, depth, radius)
+
     if algotithm == 'alpha-beta':
         move = choose_best_move_by_alpha_beta(board,depth, radius)
     else:

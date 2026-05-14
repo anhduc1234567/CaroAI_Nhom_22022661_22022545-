@@ -2,7 +2,8 @@
 from src.caro.ai.helper import *
 from src.caro.config import *
 
-def minimax(board, depth, is_maximizing, radius):
+def minimax(board, depth, is_maximizing, radius, stats):
+    stats['nodes'] += 1
     # 1. Điều kiện dừng: Nếu đã nhìn đủ xa hoặc ván đấu kết thúc
     if depth == 0 or is_terminal_node(board):
         return evaluate_board(board)
@@ -12,7 +13,7 @@ def minimax(board, depth, is_maximizing, radius):
         best_score = -float('inf')
         for move in get_potential_moves(board, radius):
             make_move(board, move, BOT_SYMBOL)
-            score = minimax(board, depth - 1, False, radius) # Đệ quy xuống lượt người
+            score = minimax(board, depth - 1, False, radius, stats) # Đệ quy xuống lượt người
             undo_move(board, move)
             best_score = max(score, best_score)
         return best_score
@@ -21,7 +22,7 @@ def minimax(board, depth, is_maximizing, radius):
         best_score = float('inf')
         for move in get_potential_moves(board, radius):
             make_move(board, move, HUMAN_SYMBOL)
-            score = minimax(board, depth - 1, True, radius) # Đệ quy xuống lượt Bot
+            score = minimax(board, depth - 1, True, radius, stats) # Đệ quy xuống lượt Bot
             undo_move(board, move)
             best_score = min(score, best_score)
         return best_score

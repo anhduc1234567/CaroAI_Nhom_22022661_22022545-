@@ -30,38 +30,60 @@ def choose_move_random(board: list[list[str]]) -> tuple[int, int] | None:
     return None
 
 def choose_best_move_by_minimax(board, depth =1, radius = 1):
+    stats = {
+        "nodes": 0
+    }
     best_move = None
     best_score = -float('inf')
     print('Đang mini-max')
     for move in get_ordered_moves(board, radius):
         make_move(board, move, BOT_SYMBOL)
-        score = minimax(board, depth, False, radius) # Bắt đầu đệ quy
+        score = minimax(board, depth, False, radius, stats) # Bắt đầu đệ quy
         undo_move(board, move)
         
         if score > best_score:
             best_score = score
             best_move = move
-            
+    print("Nodes visited:", stats['nodes'])
+    
     return best_move # Đây là Output cuối cùng của bạn
 
-def choose_best_move_by_alpha_beta(board, depth=4, radius = 1): # Hãy tăng depth lên ít nhất là 2 hoặc 3
+def choose_best_move_by_alpha_beta(board, depth=4, radius=1):
+    
+    stats = {
+        "nodes": 0,
+        "cutoffs": 0
+    }
+
     best_move = None
     best_score = -float('inf')
+
     alpha = -float('inf')
     beta = float('inf')
-    
-    moves = get_ordered_moves(board, radius= radius)
+
+    moves = get_ordered_moves(board, radius=radius)
+
     for move in moves:
         make_move(board, move, BOT_SYMBOL)
-        # Truyền alpha và beta vào đây
-        score = alphabeta(board, depth - 1, alpha, beta, False, radius)
+
+        score = alphabeta(
+            board,
+            depth - 1,
+            alpha,
+            beta,
+            False,
+            radius,
+            stats
+        )
+
         undo_move(board, move)
-        
+
         if score > best_score:
             best_score = score
             best_move = move
-        
-        # CẬP NHẬT ALPHA: Đây là chìa khóa để các nước đi sau bị cắt tỉa
+
         alpha = max(alpha, best_score)
-            
+
+    print("Nodes visited:", stats['nodes'])
+
     return best_move
