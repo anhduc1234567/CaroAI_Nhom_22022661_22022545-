@@ -1,0 +1,7 @@
+[     244ms] [LOG] Live reload enabled. @ http://127.0.0.1:5500/src/caro/ui/index.html:197
+[     427ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5500/favicon.ico:0
+[   49876ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:8222/bot-move:0
+[   49876ms] [ERROR] Lỗi kết nối API: TypeError: Failed to fetch
+    at fetchBotMove (http://127.0.0.1:5500/src/caro/ui/scripts.js:124:32)
+    at handleHumanMove (http://127.0.0.1:5500/src/caro/ui/scripts.js:155:26)
+    at HTMLDivElement.<anonymous> (http://127.0.0.1:5500/src/caro/ui/scripts.js:26:50) @ http://127.0.0.1:5500/src/caro/ui/scripts.js:133

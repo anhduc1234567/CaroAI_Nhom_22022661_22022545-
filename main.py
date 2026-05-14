@@ -5,7 +5,7 @@ from typing import List, Optional
 
 # Import các logic hiện có của bạn
 from src.caro.config import BOARD_SIZE
-from src.caro.ai.simple_bot import choose_best_move # Giả định đây là hàm Minimax của bạn
+from src.caro.ai.simple_bot import choose_best_move_by_minimax, choose_best_move_by_alpha_beta# Giả định đây là hàm Minimax của bạn
 # Lưu ý: Bạn có thể cần điều chỉnh lại đường dẫn import tùy vào cấu trúc thư mục của bạn
 
 app = FastAPI()
@@ -21,6 +21,9 @@ app.add_middleware(
 # Khai báo cấu trúc dữ liệu nhận từ Frontend
 class GameRequest(BaseModel):
     board: List[List[str]]
+    algorithm: str
+    depth : int
+    radius : int
     # Bạn có thể thêm last_move nếu thuật toán Minimax cần
 
 @app.get("/")
@@ -33,10 +36,18 @@ async def get_bot_move(request: GameRequest):
     Endpoint nhận trạng thái bàn cờ và trả về nước đi tốt nhất của Bot
     """
     board = request.board
+    algotithm = request.algorithm
+    depth = request.depth
+    radius = request.radius
     # 1. Gọi hàm Minimax đã viết trước đó
     # Giả sử hàm này trả về (row, col)
-    move = choose_best_move(board)
+    if algotithm == 'alpha-beta':
+        move = choose_best_move_by_alpha_beta(board,depth, radius)
+    else:
+        move = choose_best_move_by_minimax(board, depth, radius)
     print(move)
+    print(algotithm, depth, radius)
+    
     if move:
         row, col = move
         return {

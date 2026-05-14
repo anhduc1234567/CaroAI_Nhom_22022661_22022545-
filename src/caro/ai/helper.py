@@ -24,6 +24,74 @@ def get_potential_moves(board: list[list[str]], radius: int = 1) -> list[tuple[i
     
     # Chuyển về list để Minimax có thể duyệt qua
     return list(potential_moves)
+def quick_score(board, move):
+    r, c = move
+    score = 0
+    # Trọng số cho các mẫu hình
+    weight = {
+        "consecutive_5": 100000,
+        "consecutive_4": 10000,
+        "consecutive_3": 1000,
+        "consecutive_2": 100,
+        "neighbor": 10  # Có quân bên cạnh là có điểm
+    }
+
+    for dr, dc in [(0,1), (1,0), (1,1), (1,-1)]:
+        # Đếm số quân BOT và HUMAN xung quanh vị trí (r, c) theo hướng này
+        bot_count = count_continuous(board, r, c, dr, dc, BOT_SYMBOL)
+        human_count = count_continuous(board, r, c, dr, dc, HUMAN_SYMBOL)
+        
+        # Nếu đánh vào đây tạo ra chuỗi quân của mình
+        if bot_count >= 4: score += weight["consecutive_5"]
+        elif bot_count == 3: score += weight["consecutive_4"]
+        
+        # Nếu đánh vào đây để chặn đối phương
+        if human_count >= 4: score += weight["consecutive_5"] # Chặn 4 cực kỳ quan trọng
+        elif human_count == 3: score += weight["consecutive_4"]
+        
+        score += (bot_count + human_count) * weight["neighbor"]
+
+    return score
+
+def count_continuous(board, r, c, dr, dc, symbol):
+    # Hàm phụ đếm số quân 'symbol' liên tiếp nếu đặt vào (r, c)
+    count = 0
+    # Kiểm tra hướng tới
+    curr_r, curr_c = r + dr, c + dc
+    while 0 <= curr_r < BOARD_SIZE and 0 <= curr_c < BOARD_SIZE and board[curr_r][curr_c] == symbol:
+        count += 1
+        curr_r += dr
+        curr_c += dc
+    # Kiểm tra hướng ngược lại
+    curr_r, curr_c = r - dr, c - dc
+    while 0 <= curr_r < BOARD_SIZE and 0 <= curr_c < BOARD_SIZE and board[curr_r][curr_c] == symbol:
+        count += 1
+        curr_r -= dr
+        curr_c -= dc
+    return count
+def get_ordered_moves(board, radius=1):
+    moves = set()
+    scored_moves = []
+    
+    # 1. Tìm các ô trống xung quanh quân đã đánh
+    for r in range(BOARD_SIZE):
+        for c in range(BOARD_SIZE):
+            if board[r][c] != EMPTY_CELL:
+                for dr in range(-radius, radius + 1):
+                    for dc in range(-radius, radius + 1):
+                        nr, nc = r + dr, c + dc
+                        if 0 <= nr < BOARD_SIZE and 0 <= nc < BOARD_SIZE and board[nr][nc] == EMPTY_CELL:
+                            moves.add((nr, nc))
+    
+    # 2. Move Ordering (Quan trọng nhất để Alpha-Beta nhanh)
+    for move in moves:
+        # Chấm điểm nhanh: ô nào có nhiều quân xung quanh hơn thì ưu tiên
+        score = quick_score(board, move) 
+        scored_moves.append((score, move))
+    
+    # Sắp xếp nước tốt nhất lên đầu để Alpha-Beta cắt tỉa sớm
+    scored_moves.sort(key=lambda x: x[0], reverse=True)
+    return [m[1] for m in scored_moves]
 
 def make_move(board: list[list[str]], move: tuple[int, int], symbol: str) -> None:
     """Đặt quân cờ của người chơi hoặc bot vào tọa độ chỉ định."""
@@ -41,7 +109,7 @@ def is_board_full(board):
             return False
     return True
 
-def check_winner_2(board: list[list[str]]) -> str | None:
+def check_winner(board: list[list[str]]) -> str | None:
     """
     Kiểm tra toàn bộ bàn cờ xem có ai thắng chưa.
     Trả về: 'X' nếu Người thắng, 'O' nếu Bot thắng, None nếu chưa ai thắng.
@@ -77,7 +145,7 @@ def check_winner_2(board: list[list[str]]) -> str | None:
 
 def is_terminal_node(board):
     # 1. Kiểm tra xem có ai thắng chưa
-    winner = check_winner_2(board) 
+    winner = check_winner(board) 
     if winner is not None:
         return True
         

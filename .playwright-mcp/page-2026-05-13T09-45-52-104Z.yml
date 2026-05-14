@@ -1,0 +1,14 @@
+- generic [active] [ref=e1]:
+  - heading "🎮 Caro AI" [level=1] [ref=e2]
+  - generic [ref=e4]:
+    - generic [ref=e5] [cursor=pointer]:
+      - radio "👤 vs 🤖 Người & Máy" [checked] [ref=e6]
+      - text: 👤 vs 🤖 Người & Máy
+    - generic [ref=e7] [cursor=pointer]:
+      - radio "🤖 vs 🤖 Máy & Máy" [ref=e8]
+      - text: 🤖 vs 🤖 Máy & Máy
+  - generic [ref=e9]: "Lượt của: ❌"
+  - generic [ref=e123] [cursor=pointer]: X
+  - generic [ref=e236]:
+    - button "🔄 Chơi ván mới" [ref=e237] [cursor=pointer]
+    - button "▶️ Bot tự đấu (Máy vs Máy)" [ref=e238] [cursor=pointer]
