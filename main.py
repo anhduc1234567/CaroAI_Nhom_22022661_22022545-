@@ -5,8 +5,7 @@ from typing import List, Optional
 
 # Import các logic hiện có của bạn
 from src.caro.config import BOARD_SIZE
-from src.caro.ai.simple_bot import choose_best_move_by_minimax, choose_best_move_by_alpha_beta# Giả định đây là hàm Minimax của bạn
-# Lưu ý: Bạn có thể cần điều chỉnh lại đường dẫn import tùy vào cấu trúc thư mục của bạn
+from src.caro.ai.bot_response import choose_best_move_by_minimax, choose_best_move_by_alpha_beta, choose_best_move_by_alpha_beta_v2
 
 app = FastAPI()
 
@@ -44,7 +43,10 @@ async def get_bot_move(request: GameRequest):
     print(algotithm, depth, radius)
 
     if algotithm == 'alpha-beta':
-        move = choose_best_move_by_alpha_beta(board,depth, radius)
+
+        move = choose_best_move_by_alpha_beta(board, depth, radius)
+    elif algotithm == "alpha-beta_v2":
+        move = choose_best_move_by_alpha_beta_v2(board, depth, radius)
     else:
         move = choose_best_move_by_minimax(board, depth, radius)
     print(move)
@@ -59,5 +61,6 @@ async def get_bot_move(request: GameRequest):
         }
     
     return {"status": "no_moves_available"}
+
 
 # Để chạy: uvicorn main:app --reload

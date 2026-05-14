@@ -252,7 +252,7 @@ function handleAlgoChange() {
     const depthSelect = document.getElementById('depth-select');
     const optDepth4 = document.getElementById('opt-depth-4');
 
-    if (algo === 'minimax') {
+    if (algo === 'minimax'|| algo === 'minimax_v2' )  {
         // Nếu đang chọn depth 4 mà chuyển sang minimax thì hạ xuống 3
         if (depthSelect.value === '4') {
             depthSelect.value = '3';

@@ -1,28 +1,70 @@
 from src.caro.config import BOARD_SIZE, EMPTY_CELL, BOT_SYMBOL, HUMAN_SYMBOL
+import random
 
-def get_potential_moves(board: list[list[str]], radius: int = 1) -> list[tuple[int, int]]:
-    """
-    Tìm các ô trống xung quanh các quân cờ đã đánh trong một phạm vi nhất định.
-    Mục đích: Giảm số lượng ô cần xét cho thuật toán Minimax.
-    """
-    potential_moves = set() # Sử dụng set để không bị trùng lặp tọa độ
+# =============================================================================
+# ZOBRIST HASHING
+# Tại sao dùng? Để biến một trạng thái bàn cờ (mảng 2D) thành một con số duy nhất.
+# Giúp việc tra cứu bàn cờ trong bộ nhớ đệm (Cache) cực nhanh thay vì so sánh mảng.
+# =============================================================================
+ZOBRIST_TABLE = {}
+for r in range(BOARD_SIZE):
+    for c in range(BOARD_SIZE):
+        # Mỗi ô cờ tại một vị trí (r, c) có 2 số ngẫu nhiên cho 2 loại quân (X, O)
+        ZOBRIST_TABLE[(r, c, BOT_SYMBOL)] = random.getrandbits(64)
+        ZOBRIST_TABLE[(r, c, HUMAN_SYMBOL)] = random.getrandbits(64)
 
+# =============================================================================
+# AI ANALYSIS & METRICS
+# Bộ lưu trữ thông số đo đạc hiệu năng của AI
+# =============================================================================
+AI_STATS = {
+    "nodes_visited": 0,  # Tổng số trạng thái đã kiểm tra
+    "cache_hits": 0,     # Số lần lấy kết quả từ bộ nhớ đệm
+    "pruning_count": 0,  # Số lần cắt tỉa (chỉ dành cho Alpha-Beta)
+}
+
+def get_board_hash(board):
+    """
+    Hàm tính mã băm (hash) cho bàn cờ hiện tại bằng phép XOR.
+    Hiệu suất: Cực nhanh, giúp việc lưu trữ trạng thái vào dictionary hiệu quả.
+    """
+    h = 0
     for r in range(BOARD_SIZE):
         for c in range(BOARD_SIZE):
-            # Nếu ô này đã có quân (X hoặc O)
-            if board[r][c] != EMPTY_CELL:
-                # Quét vùng xung quanh trong phạm vi radius
-                for dr in range(-radius, radius + 1):
-                    for dc in range(-radius, radius + 1):
-                        nr, nc = r + dr, c + dc
-                        
-                        # Kiểm tra xem ô (nr, nc) có nằm trong bàn cờ không
-                        if 0 <= nr < BOARD_SIZE and 0 <= nc < BOARD_SIZE:
-                            # Nếu là ô trống, thêm vào danh sách tiềm năng
-                            if board[nr][nc] == EMPTY_CELL:
-                                potential_moves.add((nr, nc))
+            val = board[r][c]
+            if val != EMPTY_CELL:
+                h ^= ZOBRIST_TABLE[(r, c, val)]
+    return h
+
+
+
+
+def get_potential_moves(board: list[list[str]], radius: int = 2) -> list[tuple[int, int]]:
+    """
+    Tìm các ô trống xung quanh các quân cờ đã đánh trong một phạm vi nhất định.
+    Bán kính (radius) = 2 giúp phát hiện các nước đi nhảy cách (đánh xa nhau).
+    """
+    potential_moves = set()
+
+    # Tìm tất cả các vị trí đã có quân trên bàn cờ
+    occupied_cells = [
+        (r, c) for r in range(BOARD_SIZE) for c in range(BOARD_SIZE)
+        if board[r][c] != EMPTY_CELL
+    ]
+
+    # Nếu bàn cờ chưa có quân nào, chọn ô ở chính giữa
+    if not occupied_cells:
+        return [(BOARD_SIZE // 2, BOARD_SIZE // 2)]
+
+    for r, c in occupied_cells:
+        # Quét vùng rộng hơn (bán kính 2) để bắt kịp các chiến thuật đánh xa
+        for dr in range(-radius, radius + 1):
+            for dc in range(-radius, radius + 1):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < BOARD_SIZE and 0 <= nc < BOARD_SIZE:
+                    if board[nr][nc] == EMPTY_CELL:
+                        potential_moves.add((nr, nc))
     
-    # Chuyển về list để Minimax có thể duyệt qua
     return list(potential_moves)
 def quick_score(board, move):
     r, c = move
@@ -69,6 +111,7 @@ def count_continuous(board, r, c, dr, dc, symbol):
         curr_r -= dr
         curr_c -= dc
     return count
+
 def get_ordered_moves(board, radius=1):
     moves = set()
     scored_moves = []
@@ -92,6 +135,7 @@ def get_ordered_moves(board, radius=1):
     # Sắp xếp nước tốt nhất lên đầu để Alpha-Beta cắt tỉa sớm
     scored_moves.sort(key=lambda x: x[0], reverse=True)
     return [m[1] for m in scored_moves]
+
 
 def make_move(board: list[list[str]], move: tuple[int, int], symbol: str) -> None:
     """Đặt quân cờ của người chơi hoặc bot vào tọa độ chỉ định."""
@@ -158,35 +202,68 @@ def is_terminal_node(board):
 
 def evaluate_board(board):
     total_score = 0
-    
-    # Duyệt qua tất cả các dòng, cột và đường chéo
-    # Mỗi lần lấy ra một "cửa sổ" gồm 5 ô liên tiếp để chấm điểm
-    
-    # 1. Kiểm tra hàng ngang
     for r in range(BOARD_SIZE):
         for c in range(BOARD_SIZE - 4):
-            window = [board[r][c+i] for i in range(5)]
-            total_score += evaluate_window(window)
+            window = board[r][c:c+5]
+            if any(cell != EMPTY_CELL for cell in window):
+                total_score += evaluate_window(window)
 
-    # 2. Kiểm tra hàng dọc
     for c in range(BOARD_SIZE):
         for r in range(BOARD_SIZE - 4):
             window = [board[r+i][c] for i in range(5)]
-            total_score += evaluate_window(window)
+            if any(cell != EMPTY_CELL for cell in window):
+                total_score += evaluate_window(window)
 
-    # 3. Kiểm tra chéo chính (\)
     for r in range(BOARD_SIZE - 4):
         for c in range(BOARD_SIZE - 4):
             window = [board[r+i][c+i] for i in range(5)]
-            total_score += evaluate_window(window)
+            if any(cell != EMPTY_CELL for cell in window):
+                total_score += evaluate_window(window)
 
-    # 4. Kiểm tra chéo phụ (/)
     for r in range(BOARD_SIZE - 4):
         for c in range(4, BOARD_SIZE):
             window = [board[r+i][c-i] for i in range(5)]
-            total_score += evaluate_window(window)
-
+            if any(cell != EMPTY_CELL for cell in window):
+                total_score += evaluate_window(window)
     return total_score
+
+def score_move(board, move, symbol):
+    """
+    Đánh giá nước đi thông minh để sắp xếp thứ tự tìm kiếm.
+    Cải tiến: Nhìn xa 4 ô để phát hiện các liên kết gián tiếp (không nằm sát nhau).
+    """
+    row, col = move
+    opponent = HUMAN_SYMBOL if symbol == BOT_SYMBOL else BOT_SYMBOL
+    
+    score = 0
+    directions = [(0,1), (1,0), (1,1), (1,-1)]
+    
+    for dr, dc in directions:
+        # Tính toán cả khả năng Tấn công (symbol) và Phòng thủ (opponent)
+        for s in [symbol, opponent]:
+            count = 1
+            # Quét xa hơn (4 ô) để tìm các quân cờ cùng loại có khả năng liên kết
+            for i in range(1, 5):
+                r, c = row + dr*i, col + dc*i
+                if 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE and board[r][c] == s:
+                    count += 1
+                else: break
+            for i in range(1, 5):
+                r, c = row - dr*i, col - dc*i
+                if 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE and board[r][c] == s:
+                    count += 1
+                else: break
+            
+            # Trọng số điểm cho độ dài chuỗi tiềm năng
+            if count >= 5: score += 100000 if s == symbol else 80000
+            elif count == 4: score += 10000 if s == symbol else 8000
+            elif count == 3: score += 1000 if s == symbol else 800
+            elif count == 2: score += 100
+        
+    # Ưu tiên các nước đi gần trung tâm để mở rộng thế trận
+    center = BOARD_SIZE // 2
+    score += (BOARD_SIZE - abs(row - center) - abs(col - center))
+    return score
 
 def evaluate_window(window):
     score = 0
@@ -194,21 +271,15 @@ def evaluate_window(window):
     human_count = window.count(HUMAN_SYMBOL)
     empty_count = window.count(EMPTY_CELL)
 
-    # --- ĐIỂM CHO BOT (Ưu tiên tấn công) ---
-    if bot_count == 5:
-        score += 1000000
-    elif bot_count == 4 and empty_count == 1:
-        score += 10000
-    elif bot_count == 3 and empty_count == 2:
-        score += 1000
-    elif bot_count == 2 and empty_count == 3:
-        score += 100
+    # --- BOT TẤN CÔNG ---
+    if bot_count == 5: return 2000000
+    if bot_count == 4 and empty_count == 1: score += 50000
+    if bot_count == 3 and empty_count == 2: score += 5000
+    if bot_count == 2 and empty_count == 3: score += 500
 
-    # --- ĐIỂM CHO NGƯỜI (Phòng thủ - Chặn đối thủ) ---
-    # Nếu đối thủ có 4 quân, phải trừ điểm thật nặng để Bot biết đường mà chặn
-    if human_count == 4 and empty_count == 1:
-        score -= 80000 # Điểm trừ lớn hơn điểm cộng của Bot để ưu tiên phòng thủ
-    elif human_count == 3 and empty_count == 2:
-        score -= 5000
+    # --- CHẶN NGƯỜI CHƠI (Ưu tiên cực cao) ---
+    if human_count == 4 and empty_count == 1: score -= 1000000 # Phải chặn 4 ngay
+    if human_count == 3 and empty_count == 2: score -= 20000  # Chặn 3 thoáng
+    if human_count == 2 and empty_count == 3: score -= 1000
         
     return score
